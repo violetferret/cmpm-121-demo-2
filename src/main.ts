@@ -31,7 +31,28 @@ let currentCursorCommand: CursorCommand | null;
 // marker thickness
 const thinMarker: number = 3;
 const thickMarker: number = 10;
-let currentThickness: number = thinMarker;
+
+let currentMarkerThickness: number = thinMarker;
+
+// marker color
+let currentMarkerColor: string = "black";
+
+interface markerColor {
+  symbol: string;
+  color: string;
+}
+
+const colors = ["⚫️","🟣","🔵","🟢","🟡","🟠","🔴"];
+
+const markerColors: markerColor[] = [
+  { symbol: "⚫️", color: "black" },
+  { symbol: "🟣", color: "purple" },
+  { symbol: "🔵", color: "blue" },
+  { symbol: "🟢", color: "green" },
+  { symbol: "🟡", color: "yellow" },
+  { symbol: "🟠", color: "orange" },
+  { symbol: "🔴", color: "red" },
+];
 
 // starter stickers
 const stickers: Sticker[] = [
@@ -61,15 +82,17 @@ interface drawCommand {
 class LineDrawCommand implements drawCommand {
   line: Point[];
   thickness: number;
+  color: string;
 
-  constructor(line: Point[], thickness: number) {
+  constructor(line: Point[], thickness: number, color: string) {
     this.line = line;
     this.thickness = thickness;
+    this.color = color;
   }
 
   execute(ctx: CanvasRenderingContext2D): void {
     ctx.lineCap = "round";
-    ctx.strokeStyle = "black";
+    ctx.strokeStyle = this.color;
     ctx.lineWidth = this.thickness;
     for (let i = 0; i < this.line.length - 1; i++) {
       ctx.lineWidth = this.thickness;
@@ -96,9 +119,9 @@ class CursorCommand implements drawCommand {
     } else if (currentCursor == "⏺") {
       ctx.font = "8px monospace";
       ctx.fillText("⏺", this.point.x - 3, this.point.y + 2);
-    } else if (currentCursor == "⚪") {
+    } else if (colors.find(item => item === currentCursor) == currentCursor) {
       ctx.font = "22px monospace";
-      ctx.fillText("⏺", this.point.x - 8, this.point.y + 6);
+      ctx.fillText(currentCursor, this.point.x - 8, this.point.y + 6);
     } else {
       ctx.font = "32px monospace";
       ctx.fillText(currentSticker.symbol, this.point.x - 18, this.point.y + 8);
@@ -195,7 +218,6 @@ for (const sticker of stickers) {
   button.innerHTML = sticker.symbol;
   app.append(button);
   sticker.button = button;
-  console.log(stickers);
 }
 
 // line break
@@ -215,9 +237,13 @@ canvas.addEventListener("mousedown", (e) => {
   isDrawing = true;
   currentLine = [];
   currentPoint = { x: e.offsetX, y: e.offsetY };
-  if (currentCursor == "⏺" || currentCursor == "⚪") {
+  if (currentCursor == "⏺" || colors.find(item => item === currentCursor) == currentCursor) {
     currentLine.push(currentPoint);
-    currentCommand = new LineDrawCommand(currentLine, currentThickness);
+    currentCommand = new LineDrawCommand(
+      currentLine,
+      currentMarkerThickness,
+      currentMarkerColor
+    );
   } else {
     currentCommand = new StickerCommand(currentSticker, currentPoint);
   }
@@ -279,16 +305,19 @@ redoButton.addEventListener("click", function () {
 
 // marker buttons
 thinMarkerButton.addEventListener("click", function () {
-  currentThickness = thinMarker;
+  currentMarkerThickness = thinMarker;
   currentCursor = "⏺";
+  currentMarkerColor = "black";
   thinMarkerButton.innerHTML = "⏺";
   thickMarkerButton.innerHTML = "◯";
 });
 
 thickMarkerButton.addEventListener("click", function () {
-  currentThickness = thickMarker;
-  currentCursor = "⚪";
-  thickMarkerButton.innerHTML = "⚪";
+  currentMarkerThickness = thickMarker;
+  const randomMarkerColor: markerColor = markerColors[Math.floor(Math.random() * (markerColors.length - 1))];
+  currentMarkerColor = randomMarkerColor.color;
+  currentCursor = randomMarkerColor.symbol;
+  thickMarkerButton.innerHTML = randomMarkerColor.symbol;
   thinMarkerButton.innerHTML = "￮";
 });
 
@@ -317,7 +346,6 @@ canvas.addEventListener("sticker-add", function () {
       button.innerHTML = sticker.symbol;
       app.append(button);
       sticker.button = button;
-      console.log(stickers);
     }
     for (const sticker of stickers) {
       if (sticker.button) {
@@ -339,7 +367,7 @@ exportButton.addEventListener("click", function () {
 
   exportCanvasContext.canvas.height = 1024;
   exportCanvasContext.canvas.width = 1024;
-  
+
   exportCanvasContext.scale(4, 4);
 
   exportCanvasContext.fillStyle = "white";
