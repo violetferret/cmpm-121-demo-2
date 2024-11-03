@@ -6,11 +6,18 @@ const APP_NAME = "Sticker Sketchpad";
 // When true, moving the mouse draws on the canvas
 let isDrawing = false;
 
+// point / line types
 interface Point {
   x: number;
   y: number;
 }
 type Line = Point[];
+
+// stickers
+interface Sticker {
+  symbol: string;
+  button: HTMLButtonElement | null;
+}
 
 // current working
 let currentPoint: Point;
@@ -18,12 +25,20 @@ let currentLine: Line = [];
 let currentCommand: drawCommand;
 let cursorPoint: Point;
 let currentCursor: string = "⏺";
-let cursorCommand: CursorCommand | null;
+let currentSticker: Sticker;
+let currentCursorCommand: CursorCommand | null;
 
 // marker thickness
 const thinMarker: number = 3;
 const thickMarker: number = 10;
 let currentThickness: number = thinMarker;
+
+// starter stickers
+const stickers: Sticker[] = [
+  { symbol: "🌸", button: null },
+  { symbol: "🌿", button: null },
+  { symbol: "🌈", button: null },
+];
 
 // stack of commands
 let commandStack: drawCommand[] = [];
@@ -37,20 +52,6 @@ const toolMoved = new Event("tool-moved");
 
 // sticker add event
 const stickerAdd = new Event("sticker-add");
-
-// stickers
-interface Sticker {
-  symbol: string;
-  button: HTMLButtonElement | null;
-}
-
-let currentSticker: Sticker;
-
-const stickers: Sticker[] = [
-  { symbol: "🌸", button: null },
-  { symbol: "🌿", button: null },
-  { symbol: "🌈", button: null },
-];
 
 // interface / class definitions for draw commands
 interface drawCommand {
@@ -121,12 +122,12 @@ class StickerCommand implements drawCommand {
 
 // function for redrawing canvas
 function redrawCanvas() {
-  canvasContext.clearRect(0, 0, 256, 256);
+  canvasContext.clearRect(0, 0, canvas.width, canvas.height);
   commandStack.forEach((command) => {
     command.execute(canvasContext);
   });
-  if (cursorCommand) {
-    cursorCommand.execute(canvasContext);
+  if (currentCursorCommand) {
+    currentCursorCommand.execute(canvasContext);
   }
 }
 
@@ -229,10 +230,10 @@ canvas.addEventListener("mousemove", (e) => {
     currentPoint = { x: e.offsetX, y: e.offsetY };
     currentLine.push(currentPoint);
     canvas.dispatchEvent(drawingChanged);
-    cursorCommand = null;
+    currentCursorCommand = null;
   } else {
     cursorPoint = { x: e.offsetX, y: e.offsetY };
-    cursorCommand = new CursorCommand(cursorPoint);
+    currentCursorCommand = new CursorCommand(cursorPoint);
     canvas.dispatchEvent(toolMoved);
   }
 });
@@ -243,19 +244,19 @@ canvas.addEventListener("mouseup", function () {
 });
 
 canvas.addEventListener("mouseout", function () {
-  cursorCommand = null;
+  currentCursorCommand = null;
   canvas.dispatchEvent(toolMoved);
 });
 
 canvas.addEventListener("mouseenter", (e) => {
   cursorPoint = { x: e.offsetX, y: e.offsetY };
-  cursorCommand = new CursorCommand(cursorPoint);
+  currentCursorCommand = new CursorCommand(cursorPoint);
   canvas.dispatchEvent(toolMoved);
 });
 
 // clear button
 clearButton.addEventListener("click", function () {
-  canvasContext.clearRect(0, 0, 256, 256);
+  canvasContext.clearRect(0, 0, canvas.width, canvas.height);
   commandStack = [];
   currentLine = [];
 });
@@ -308,6 +309,7 @@ customStickerButton.addEventListener("click", function () {
   canvas.dispatchEvent(stickerAdd);
 });
 
+// adding sticker event
 canvas.addEventListener("sticker-add", function () {
   for (const sticker of stickers) {
     if (!sticker.button) {
@@ -329,7 +331,6 @@ canvas.addEventListener("sticker-add", function () {
 });
 
 // export button
-
 exportButton.addEventListener("click", function () {
   const exportCanvas = document.createElement("canvas") as HTMLCanvasElement;
   const exportCanvasContext = exportCanvas.getContext(
@@ -344,7 +345,6 @@ exportButton.addEventListener("click", function () {
   exportCanvasContext.fillStyle = "white";
   exportCanvasContext.fillRect(0, 0, 1024, 1024);
 
-  exportCanvasContext.clearRect(0, 0, 256, 256);
   commandStack.forEach((command) => {
     command.execute(exportCanvasContext);
   });
