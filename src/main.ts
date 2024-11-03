@@ -37,6 +37,12 @@ let currentPoint: Point;
 let currentLine: Line = [];
 let currentCommand: drawCommand;
 
+const thinMarker: number = 3;
+const thickMarker: number = 10;
+
+let currentThickness: number = thinMarker;
+
+
 let commandStack: drawCommand[] = [];
 const redoStack: drawCommand[] = [];
 
@@ -49,16 +55,20 @@ interface drawCommand {
 class LineDrawCommand implements drawCommand {
   ctx: CanvasRenderingContext2D;
   line: Point[];
+  thickness: number;
 
-  constructor(ctx: CanvasRenderingContext2D, line: Point[]) {
+  constructor(ctx: CanvasRenderingContext2D, line: Point[], thickness: number) {
     this.ctx = ctx;
     this.line = line;
+    this.thickness = thickness;
+    this.ctx.lineCap = "round";
     this.ctx.strokeStyle = "black";
-    this.ctx.lineWidth = 1;
+    this.ctx.lineWidth = thickness;
   }
 
   execute(): void {
     for (let i = 0; i < this.line.length - 1; i++) {
+      this.ctx.lineWidth = this.thickness;
       this.ctx.beginPath();
       this.ctx.moveTo(this.line[i].x, this.line[i].y);
       this.ctx.lineTo(this.line[i + 1].x, this.line[i + 1].y);
@@ -75,7 +85,7 @@ canvas.addEventListener("mousedown", (e) => {
   y = e.offsetY;
   currentPoint = { x, y };
   currentLine.push(currentPoint);
-  currentCommand = new LineDrawCommand(canvasContext, currentLine);
+  currentCommand = new LineDrawCommand(canvasContext, currentLine, currentThickness);
   commandStack.push(currentCommand);
   canvas.dispatchEvent(drawingChanged);
 });
@@ -90,19 +100,20 @@ canvas.addEventListener("mousemove", (e) => {
   }
 });
 
-canvas.addEventListener("mouseup", function() {
+canvas.addEventListener("mouseup", function () {
   isDrawing = false;
   // commandStack.push(new LineDrawCommand(canvasContext, currentLine));
   canvas.dispatchEvent(drawingChanged);
-})
+});
 
-canvas.addEventListener("drawing-changed", function() {
+canvas.addEventListener("drawing-changed", function () {
   canvasContext.clearRect(0, 0, 256, 256);
   commandStack.forEach((command) => {
     command.execute();
-  })
-})
+  });
+});
 
+// line break
 const br = document.createElement("br");
 app.append(br);
 
@@ -112,11 +123,11 @@ const clearButton = document.createElement("button");
 clearButton.innerHTML = "Clear canvas";
 app.append(clearButton);
 
-clearButton.addEventListener("click", function() {
+clearButton.addEventListener("click", function () {
   canvasContext.clearRect(0, 0, 256, 256);
   commandStack = [];
   currentLine = [];
-})
+});
 
 // undo button
 const undoButton = document.createElement("button");
@@ -124,20 +135,42 @@ undoButton.innerHTML = "Undo";
 app.append(undoButton);
 
 undoButton.addEventListener("click", function () {
-    if (commandStack.length > 0) {
-      redoStack.push(commandStack.pop() as drawCommand);
-      canvas.dispatchEvent(drawingChanged);
-    }
-  });
+  if (commandStack.length > 0) {
+    redoStack.push(commandStack.pop() as drawCommand);
+    canvas.dispatchEvent(drawingChanged);
+  }
+});
 
-  // redo button
+// redo button
 const redoButton = document.createElement("button");
 redoButton.innerHTML = "Redo";
 app.append(redoButton);
 
 redoButton.addEventListener("click", function () {
-    if (redoStack.length > 0) {
-      commandStack.push(redoStack.pop() as drawCommand);
-      canvas.dispatchEvent(drawingChanged);
-    }
-  });
+  if (redoStack.length > 0) {
+    commandStack.push(redoStack.pop() as drawCommand);
+    canvas.dispatchEvent(drawingChanged);
+  }
+});
+
+// thickness buttons
+const thinMarkerButton = document.createElement("button");
+thinMarkerButton.innerHTML = "⏺";
+app.append(thinMarkerButton);
+
+thinMarkerButton.addEventListener("click", function() {
+  currentThickness = thinMarker;
+  thinMarkerButton.innerHTML = "⏺";
+  thickMarkerButton.innerHTML = "◯";
+});
+
+const thickMarkerButton = document.createElement("button");
+thickMarkerButton.innerHTML = "◯";
+app.append(thickMarkerButton);
+
+thickMarkerButton.addEventListener("click", function() {
+  currentThickness = thickMarker;
+  thickMarkerButton.innerHTML = "⚪";
+  thinMarkerButton.innerHTML = "￮";
+});
+
