@@ -5,8 +5,6 @@ const APP_NAME = "Sticker Sketchpad";
 
 // When true, moving the mouse draws on the canvas
 let isDrawing = false;
-let x = 0;
-let y = 0;
 
 interface Point {
   x: number;
@@ -36,6 +34,9 @@ const drawingChanged = new Event("drawing-changed");
 
 // tool moved event
 const toolMoved = new Event("tool-moved");
+
+// sticker add event
+const stickerAdd = new Event("sticker-add");
 
 // stickers
 interface Sticker {
@@ -185,18 +186,28 @@ app.append(thickMarkerButton);
 // line break
 app.append(document.createElement("br"));
 
+// custom sticker button
+const customStickerButton = document.createElement("button");
+customStickerButton.innerHTML = "Custom sticker";
+app.append(customStickerButton);
+
+// line break
+app.append(document.createElement("br"));
+
 // sticker buttons
 for (const sticker of stickers) {
   const button = document.createElement("button");
   button.innerHTML = sticker.symbol;
   app.append(button);
   sticker.button = button;
+  console.log(stickers);
 }
 
 // event listeners -----------------------------------------------------------------------
 canvas.addEventListener("drawing-changed", redrawCanvas);
 canvas.addEventListener("tool-moved", redrawCanvas);
 
+// mouse actions
 canvas.addEventListener("mousedown", (e) => {
   isDrawing = true;
   currentLine = [];
@@ -245,12 +256,14 @@ canvas.addEventListener("mouseenter", (e) => {
   canvas.dispatchEvent(toolMoved);
 });
 
+// clear button
 clearButton.addEventListener("click", function () {
   canvasContext.clearRect(0, 0, 256, 256);
   commandStack = [];
   currentLine = [];
 });
 
+// undo button
 undoButton.addEventListener("click", function () {
   if (commandStack.length > 0) {
     redoStack.push(commandStack.pop() as drawCommand);
@@ -258,6 +271,7 @@ undoButton.addEventListener("click", function () {
   }
 });
 
+// redo button
 redoButton.addEventListener("click", function () {
   if (redoStack.length > 0) {
     commandStack.push(redoStack.pop() as drawCommand);
@@ -265,6 +279,7 @@ redoButton.addEventListener("click", function () {
   }
 });
 
+// marker buttons
 thinMarkerButton.addEventListener("click", function () {
   currentThickness = thinMarker;
   currentCursor = "⏺";
@@ -279,11 +294,41 @@ thickMarkerButton.addEventListener("click", function () {
   thinMarkerButton.innerHTML = "￮";
 });
 
+// sticker buttons
 for (const sticker of stickers) {
   if (sticker.button) {
-  sticker.button.addEventListener("click", (e) => {
+  sticker.button.addEventListener("click", function() {
     currentCursor = sticker.symbol;
     currentSticker = sticker;
   })
   }
 }
+
+// custom sticker button
+customStickerButton.addEventListener("click", function() {
+  const newSymbol: string = prompt("Custom sticker text", "🍊") as string;
+  stickers.push({symbol: newSymbol, button: null});
+  canvas.dispatchEvent(stickerAdd);
+});
+
+canvas.addEventListener("sticker-add", function() {
+  for (const sticker of stickers) {
+    if (!sticker.button) {
+    const button = document.createElement("button");
+    button.innerHTML = sticker.symbol;
+    app.append(button);
+    sticker.button = button;
+    console.log(stickers);
+  }
+  for (const sticker of stickers) {
+    if (sticker.button) {
+    sticker.button.addEventListener("click", function() {
+      currentCursor = sticker.symbol;
+      currentSticker = sticker;
+    })
+    }
+  }
+}
+});
+
+
