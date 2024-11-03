@@ -33,21 +33,27 @@ interface Point {
 }
 type Line = Point[];
 
+// current working
 let currentPoint: Point;
 let currentLine: Line = [];
 let currentCommand: drawCommand;
 
+// marker thickness
 const thinMarker: number = 3;
 const thickMarker: number = 10;
-
 let currentThickness: number = thinMarker;
 
-
+// stack of commands
 let commandStack: drawCommand[] = [];
 const redoStack: drawCommand[] = [];
 
+// drawing changed event
 const drawingChanged = new Event("drawing-changed");
 
+// tool moved event
+const toolMoved = new Event("tool-moved");
+
+// interface / class definitions for draw commands
 interface drawCommand {
   execute(): void;
 }
@@ -85,7 +91,11 @@ canvas.addEventListener("mousedown", (e) => {
   y = e.offsetY;
   currentPoint = { x, y };
   currentLine.push(currentPoint);
-  currentCommand = new LineDrawCommand(canvasContext, currentLine, currentThickness);
+  currentCommand = new LineDrawCommand(
+    canvasContext,
+    currentLine,
+    currentThickness
+  );
   commandStack.push(currentCommand);
   canvas.dispatchEvent(drawingChanged);
 });
@@ -97,21 +107,64 @@ canvas.addEventListener("mousemove", (e) => {
     currentPoint = { x, y };
     currentLine.push(currentPoint);
     canvas.dispatchEvent(drawingChanged);
+    cursorCommand = null;
+  } else {
+    cursorCommand = new CursorCommand(canvasContext, e.offsetX, e.offsetY);
+    canvas.dispatchEvent(toolMoved);
   }
 });
 
 canvas.addEventListener("mouseup", function () {
   isDrawing = false;
-  // commandStack.push(new LineDrawCommand(canvasContext, currentLine));
   canvas.dispatchEvent(drawingChanged);
 });
 
-canvas.addEventListener("drawing-changed", function () {
+function redrawCanvas() {
   canvasContext.clearRect(0, 0, 256, 256);
   commandStack.forEach((command) => {
     command.execute();
   });
+  if (cursorCommand) {
+    cursorCommand.execute();
+  }
+}
+
+canvas.addEventListener("drawing-changed", redrawCanvas);
+
+let cursorCommand: CursorCommand | null;
+
+class CursorCommand {
+  ctx: CanvasRenderingContext2D;
+  x: number;
+  y: number;
+
+  constructor(ctx: CanvasRenderingContext2D, x: number, y: number) {
+    this.ctx = ctx;
+    this.x = x;
+    this.y = y;
+  }
+  execute() {
+    if (currentThickness == thinMarker) {
+      this.ctx.font = "8px monospace";
+      this.ctx.fillText("⏺", this.x - 3, this.y + 2);
+    } else if (currentThickness == thickMarker) {
+      this.ctx.font = "22px monospace";
+      this.ctx.fillText("⏺", this.x - 8, this.y + 6);
+    }
+  }
+}
+
+canvas.addEventListener("mouseout", function () {
+  cursorCommand = null;
+  canvas.dispatchEvent(toolMoved);
 });
+
+canvas.addEventListener("mouseenter", (e) => {
+  cursorCommand = new CursorCommand(canvasContext, e.offsetX, e.offsetY);
+  canvas.dispatchEvent(toolMoved);
+});
+
+canvas.addEventListener("tool-moved", redrawCanvas);
 
 // line break
 const br = document.createElement("br");
@@ -158,7 +211,7 @@ const thinMarkerButton = document.createElement("button");
 thinMarkerButton.innerHTML = "⏺";
 app.append(thinMarkerButton);
 
-thinMarkerButton.addEventListener("click", function() {
+thinMarkerButton.addEventListener("click", function () {
   currentThickness = thinMarker;
   thinMarkerButton.innerHTML = "⏺";
   thickMarkerButton.innerHTML = "◯";
@@ -168,9 +221,8 @@ const thickMarkerButton = document.createElement("button");
 thickMarkerButton.innerHTML = "◯";
 app.append(thickMarkerButton);
 
-thickMarkerButton.addEventListener("click", function() {
+thickMarkerButton.addEventListener("click", function () {
   currentThickness = thickMarker;
   thickMarkerButton.innerHTML = "⚪";
   thinMarkerButton.innerHTML = "￮";
 });
-
