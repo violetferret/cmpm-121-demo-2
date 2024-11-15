@@ -170,62 +170,72 @@ const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const canvasContext = canvas.getContext("2d") as CanvasRenderingContext2D;
 app.append(canvas);
 
-// line break
-app.append(document.createElement("br"));
+//L: Command box
+const commandBox = document.createElement("div")
+const commandHeading = document.createElement("h3")
+commandHeading.innerHTML = "Commands"
+commandBox.classList.add("box")
+commandBox.append(commandHeading)
+app.append(commandBox)
 
 // clear button
 // learned method from https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingcanvasContext2D/clearRect
 const clearButton = document.createElement("button");
 clearButton.innerHTML = "Clear canvas";
-app.append(clearButton);
+commandBox.append(clearButton);
 
 // undo button
 const undoButton = document.createElement("button");
 undoButton.innerHTML = "Undo";
-app.append(undoButton);
+commandBox.append(undoButton);
 
 // redo button
 const redoButton = document.createElement("button");
 redoButton.innerHTML = "Redo";
-app.append(redoButton);
+commandBox.append(redoButton);
 
-// line break
-app.append(document.createElement("br"));
+//L: Marker box
+const markerBox = document.createElement("div")
+const markerHeading = document.createElement("h3")
+markerHeading.innerHTML = "Marker"
+markerBox.classList.add("box")
+markerBox.append(markerHeading)
+app.append(markerBox)
 
 // thickness buttons
 const thinMarkerButton = document.createElement("button");
 thinMarkerButton.innerHTML = "⏺";
-app.append(thinMarkerButton);
+markerBox.append(thinMarkerButton);
 
 const thickMarkerButton = document.createElement("button");
 thickMarkerButton.innerHTML = "◯";
-app.append(thickMarkerButton);
+markerBox.append(thickMarkerButton);
 
-// line break
-app.append(document.createElement("br"));
+//L: Sticker box
+const stickerBox = document.createElement("div")
+const stickerHeading = document.createElement("h3")
+stickerHeading.innerHTML = "Stickers"
+stickerBox.classList.add("box")
+stickerBox.append(stickerHeading)
+app.append(stickerBox)
 
 // custom sticker button
 const customStickerButton = document.createElement("button");
 customStickerButton.innerHTML = "Custom sticker";
-app.append(customStickerButton);
-
-// line break
-app.append(document.createElement("br"));
+stickerBox.append(customStickerButton);
 
 // sticker buttons
 for (const sticker of stickers) {
   const button = document.createElement("button");
   button.innerHTML = sticker.symbol;
-  app.append(button);
+  stickerBox.append(button);
   sticker.button = button;
 }
-
-// line break
-app.append(document.createElement("br"));
 
 // export button
 const exportButton = document.createElement("button");
 exportButton.innerHTML = "Export";
+exportButton.id = "export"
 app.append(exportButton);
 
 // event listeners -----------------------------------------------------------------------
@@ -344,7 +354,7 @@ canvas.addEventListener("sticker-add", function () {
     if (!sticker.button) {
       const button = document.createElement("button");
       button.innerHTML = sticker.symbol;
-      app.append(button);
+      stickerBox.append(button);
       sticker.button = button;
     }
     for (const sticker of stickers) {
