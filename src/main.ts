@@ -113,10 +113,7 @@ class CursorCommand implements drawCommand {
     this.point = point;
   }
   execute(ctx: CanvasRenderingContext2D) {
-    if (currentCursor == undefined) {
-      ctx.font = "8px monospace";
-      ctx.fillText("⏺", this.point.x - 3, this.point.y + 2);
-    } else if (currentCursor == "⏺") {
+    if (currentCursor == undefined || (currentCursor == "⏺")) {
       ctx.font = "8px monospace";
       ctx.fillText("⏺", this.point.x - 3, this.point.y + 2);
     } else if (colors.find(item => item === currentCursor) == currentCursor) {
@@ -324,7 +321,7 @@ thinMarkerButton.addEventListener("click", function () {
 
 thickMarkerButton.addEventListener("click", function () {
   currentMarkerThickness = thickMarker;
-  const randomMarkerColor: markerColor = markerColors[Math.floor(Math.random() * (markerColors.length - 1))];
+  const randomMarkerColor: markerColor = markerColors[Math.floor(Math.random() * (markerColors.length))];
   currentMarkerColor = randomMarkerColor.color;
   currentCursor = randomMarkerColor.symbol;
   thickMarkerButton.innerHTML = randomMarkerColor.symbol;
@@ -375,8 +372,7 @@ exportButton.addEventListener("click", function () {
     "2d"
   ) as CanvasRenderingContext2D;
 
-  exportCanvasContext.canvas.height = 1024;
-  exportCanvasContext.canvas.width = 1024;
+  exportCanvasContext.canvas.height = exportCanvasContext.canvas.width = 1024;
 
   exportCanvasContext.scale(4, 4);
 
